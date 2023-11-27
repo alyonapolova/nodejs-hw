@@ -15,7 +15,6 @@ const writeBd = async (db) => {
 
 const listContacts = async () => {
   const contacts = await readBd();
-
   return contacts;
 };
 
