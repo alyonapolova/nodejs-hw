@@ -9,7 +9,21 @@ const HttpError = require("../helpers/httpError");
 const controllerWrapper = require("../helpers/controllerWrapper");
 
 const getAll = async (req, res) => {
-  const data = await Contact.find();
+  const { _id: owner } = req.user;
+
+  const { page = 1, limit = 10, favorite } = req.query;
+  const skip = (page - 1) * limit;
+
+  const filter = { owner };
+  if (favorite) {
+    filter.favorite = favorite.toLowerCase() === "true";
+  }
+
+  const data = await Contact.find(filter, "-createdAt -updatedAt", {
+    skip,
+    limit,
+  }).populate("owner", "email");
+
   res.status(200).json(data);
 };
 
@@ -28,7 +42,10 @@ const addNewContact = async (req, res) => {
     const [{ path }] = error.details;
     throw HttpError(400, `Missing required ${path} field`);
   }
-  const data = await Contact.create(req.body);
+
+  const { _id: owner } = req.user;
+
+  const data = await Contact.create({ ...req.body, owner });
   res.status(201).json(data);
 };
 
