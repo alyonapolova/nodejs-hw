@@ -3,6 +3,9 @@ const HttpError = require("../helpers/httpError");
 const controllerWrapper = require("../helpers/controllerWrapper");
 const { registerSchema, loginSchema } = require("../models/user");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
+const { SECRET_KEY } = process.env;
 
 const register = async (req, res, next) => {
   const { error } = registerSchema.validate(req.body);
@@ -42,7 +45,13 @@ const login = async (req, res, next) => {
   if (!comparePassword) {
     throw HttpError(401, "Email or password is wrong");
   }
-  const token = "gfbhdnew23456";
+
+  const payload = {
+    id: user._id,
+  };
+
+  const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "23h" });
+
   res.status(200).json({
     token: token,
     user: {
