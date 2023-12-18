@@ -3,14 +3,9 @@ const mongoose = require("mongoose");
 const app = require("../app");
 
 require("dotenv").config();
-mongoose.set("strictQuery", true);
+// mongoose.set("strictQuery", true);
 
 const request = require("supertest");
-
-// ответ должен иметь статус-код 200
-// в ответе должен возвращаться токен
-// в ответе должен возвращаться объект user с 2 полями
-// email и subscription, имеющие тип данных String
 
 describe("test login controller", () => {
   beforeAll(async () => {
@@ -35,12 +30,14 @@ describe("test login controller", () => {
     expect(body.token).toBeTruthy();
   });
 
-  test("return object", async () => {
+  test("return object with 2 keys", async () => {
     const res = await request(app).post("/users/login").send(user);
 
     const { body } = res;
 
     expect(body).toBeInstanceOf(Object);
+    expect(body).toHaveProperty("token");
+    expect(body).toHaveProperty("user");
   });
 
   test("email and subscription should be strings", async () => {
