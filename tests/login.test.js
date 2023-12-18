@@ -37,6 +37,8 @@ describe("test login controller", () => {
     expect(body).toBeInstanceOf(Object);
     expect(body).toHaveProperty("token");
     expect(body).toHaveProperty("user");
+    expect(body.user).toHaveProperty("email");
+    expect(body.user).toHaveProperty("subscription");
   });
 
   test("email and subscription should be strings", async () => {
