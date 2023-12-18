@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const app = require("../app");
 
 require("dotenv").config();
-// mongoose.set("strictQuery", true);
 
 const request = require("supertest");
 
