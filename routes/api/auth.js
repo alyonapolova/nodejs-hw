@@ -18,4 +18,6 @@ router.patch(
   authCtrl.updateAvatar
 );
 
+router.get("/verify/:verificationToken", authCtrl.updateAvatar);
+
 module.exports = router;
