@@ -5,7 +5,7 @@ const upload = require("../../middlewares/upload");
 const router = express.Router();
 
 router.post("/register", authCtrl.register);
-router.get("verify/:verificationToken", authCtrl.verifyEmail);
+router.get("/verify/:verificationToken", authCtrl.verifyEmail);
 router.post("/login", authCtrl.login);
 router.get("/current", authenticate, authCtrl.current);
 router.post("/logout", authenticate, authCtrl.logout);
