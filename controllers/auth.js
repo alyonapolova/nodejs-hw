@@ -8,8 +8,10 @@ const gravatar = require("gravatar");
 const path = require("path");
 const fs = require("fs/promises");
 const Jimp = require("jimp");
+const { nanoid } = require("nanoid");
+const transporter = require("../helpers/sendEmail");
 
-const { SECRET_KEY } = process.env;
+const { SECRET_KEY, BASE_URL, META_USER } = process.env;
 
 const avatarDir = path.join(__dirname, "../", "public", "avatars");
 
@@ -30,15 +32,42 @@ const register = async (req, res, next) => {
 
   const avatarURL = gravatar.url(email);
 
+  const verificationToken = nanoid();
+
   const newUser = await User.create({
     ...req.body,
     password: hashPassword,
     avatarURL,
+    verificationToken,
   });
+
+  const verifyEmail = {
+    to: email,
+    from: META_USER,
+    subject: "Verify email",
+    html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationToken}">Click verify email</a>`,
+  };
+
+  await transporter.sendMail(verifyEmail);
 
   res.status(201).json({
     user: { email: newUser.email, subscription: newUser.subscription },
   });
+};
+
+const verifyEmail = async (req, res) => {
+  const { verificationToken } = req.params;
+  const user = await User.findOne({ verificationToken });
+
+  if (!user) {
+    throw HttpError(404, "User not found");
+  }
+  await User.findByIdAndUpdate(user._id, {
+    verify: true,
+    verificationToken: null,
+  });
+
+  res.status(200).json("Verification successful");
 };
 
 const login = async (req, res, next) => {
@@ -56,6 +85,9 @@ const login = async (req, res, next) => {
   const comparePassword = await bcrypt.compare(password, user.password);
   if (!comparePassword) {
     throw HttpError(401, "Email or password is wrong");
+  }
+  if (!user.verify) {
+    throw HttpError(401, "Email isn't verified");
   }
 
   const payload = {
@@ -127,6 +159,7 @@ const updateAvatar = async (req, res) => {
 
 module.exports = {
   register: controllerWrapper(register),
+  verifyEmail: controllerWrapper(verifyEmail),
   login: controllerWrapper(login),
   current: controllerWrapper(current),
   logout: controllerWrapper(logout),
