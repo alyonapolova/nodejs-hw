@@ -1,11 +1,25 @@
-FROM node:16
+FROM node:latest
 
 WORKDIR /app
 
-COPY . .
+ENV NODE_ENV=test
+
+COPY package*.json .
 
 RUN npm install
 
-EXPOSE 3000
+COPY . .
 
-ENTRYPOINT [ "npm", "run", "start:dev" ]
+ENTRYPOINT [ "npm", "run", "start" ]
+
+# FROM node:16
+
+# WORKDIR /app
+
+# COPY . .
+
+# RUN npm install
+
+# EXPOSE 3000
+
+# ENTRYPOINT [ "npm", "run", "start:dev" ]
