@@ -1,7 +1,7 @@
 const { User } = require("../models/user");
 const HttpError = require("../helpers/httpError");
 const controllerWrapper = require("../helpers/controllerWrapper");
-const { registerSchema, loginSchema } = require("../models/user");
+const { registerSchema, loginSchema, emailSchema } = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
@@ -45,7 +45,7 @@ const register = async (req, res, next) => {
     to: email,
     from: META_USER,
     subject: "Verify email",
-    html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationToken}">Click verify email</a>`,
+    html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationToken}">Click here to verify your email</a>`,
   };
 
   await transporter.sendMail(verifyEmail);
@@ -62,12 +62,43 @@ const verifyEmail = async (req, res) => {
   if (!user) {
     throw HttpError(404, "User not found");
   }
+
   await User.findByIdAndUpdate(user._id, {
     verify: true,
     verificationToken: null,
   });
 
   res.status(200).json("Verification successful");
+};
+
+const resendEmail = async (req, res) => {
+  const { error } = emailSchema.validate(req.body);
+  if (error) {
+    const [{ path }] = error.details;
+    throw HttpError(400, `Missing required ${path} field`);
+  }
+
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw HttpError(401, "Invalid email");
+  }
+
+  if (user.verify) {
+    throw HttpError(400, "Verification has already been passed");
+  }
+
+  const verifyEmail = {
+    to: email,
+    from: META_USER,
+    subject: "Verify email",
+    html: `<a target="_blank" href="${BASE_URL}/users/verify/${user.verificationToken}">Click here to verify your email</a>`,
+  };
+
+  await transporter.sendMail(verifyEmail);
+
+  res.status(200).json({ message: "Verification email sent" });
 };
 
 const login = async (req, res, next) => {
@@ -160,6 +191,7 @@ const updateAvatar = async (req, res) => {
 module.exports = {
   register: controllerWrapper(register),
   verifyEmail: controllerWrapper(verifyEmail),
+  resendEmail: controllerWrapper(resendEmail),
   login: controllerWrapper(login),
   current: controllerWrapper(current),
   logout: controllerWrapper(logout),
